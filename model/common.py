@@ -71,7 +71,7 @@ def normalize(x, rgb_mean=DIV2K_RGB_MEAN):
     #print(depth)
     #x = tf.concat((depth, color), axis=3, name='concat')
     #print((x/DIV2K_RGB_MEAN))
-    return (x/DIV2K_RGB_MEAN)
+    return (x)#/DIV2K_RGB_MEAN)
 
 
 def denormalize(x, rgb_mean=DIV2K_RGB_MEAN):
@@ -93,7 +93,7 @@ def denormalize(x, rgb_mean=DIV2K_RGB_MEAN):
 
     refined_depth_map = tf.multiply(x, depth_scale_mat) + depth_start_mat
     '''
-    return x * 1000.#*1200.#+ 0.18
+    return x #* 1000.#*1200.#+ 0.18
 
 
 def normalize_01(x):

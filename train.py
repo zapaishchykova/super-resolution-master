@@ -401,7 +401,7 @@ class WdsrTrainer(Trainer):
     def depth_loss_function(self, y_true, y_pred):
         # Point-wise depth
 
-        max_val = 600.0
+        max_val = 1000.0
         l_depth = K.mean(K.abs(y_pred - y_true), axis=-1)
 
         # Edges

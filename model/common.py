@@ -117,7 +117,7 @@ def denormalize_m11(x):
 
 
 def psnr(x1, x2):
-    return tf.image.psnr(x1, x2, max_val=500.0)
+    return tf.image.psnr(x1, x2, max_val=2500.0)
     #return tf.image.ssim(x1, x2)
 
 # ---------------------------------------

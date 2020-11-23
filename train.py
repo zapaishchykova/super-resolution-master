@@ -14,6 +14,7 @@ from tensorflow.keras.optimizers.schedules import PiecewiseConstantDecay
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import math_ops
+import tensorflow_addons as tfa
 from tensorflow.python.keras import backend as K
 import numpy as np
 import tensorflow as tf
@@ -398,6 +399,21 @@ class WdsrTrainer(Trainer):
         return K.mean(K.square(first_log - second_log), axis=-1) - 0.4 * K.square(
             K.mean(first_log - second_log, axis=-1))
 
+    def gaussian_blur(self, img, kernel_size=11, sigma=5):
+        def gauss_kernel(channels, kernel_size, sigma):
+            ax = tf.range(-kernel_size // 2 + 1.0, kernel_size // 2 + 1.0)
+            xx, yy = tf.meshgrid(ax, ax)
+            kernel = tf.exp(-(xx ** 2 + yy ** 2) / (2.0 * sigma ** 2))
+            kernel = kernel / tf.reduce_sum(kernel)
+            kernel = tf.tile(kernel[..., tf.newaxis], [1, 1, channels])
+            return kernel
+
+        gaussian_kernel = gauss_kernel(tf.shape(img)[-1], kernel_size, sigma)
+        gaussian_kernel = gaussian_kernel[..., tf.newaxis]
+
+        return tf.nn.depthwise_conv2d(img, gaussian_kernel, [1, 1, 1, 1],
+                                      padding='SAME', data_format='NHWC')
+
     def depth_loss_function(self, y_true, y_pred):
         # Point-wise depth
 
@@ -405,8 +421,10 @@ class WdsrTrainer(Trainer):
         l_depth = K.mean(K.abs(y_pred - y_true), axis=-1)
 
         # Edges
-        dy_true, dx_true = tf.image.image_gradients(y_true)
-        dy_pred, dx_pred = tf.image.image_gradients(y_pred)
+        y_true_gauss = self.gaussian_blur(y_true) #tfa.image.gaussian_filter2d(y_true, sigma=1.)
+        y_pred_gauss = self.gaussian_blur(y_pred) #tfa.image.gaussian_filter2d(y_pred, sigma=1.)
+        dy_true, dx_true = tf.image.image_gradients(y_true_gauss)
+        dy_pred, dx_pred = tf.image.image_gradients(y_pred_gauss)
         l_edges = K.mean(K.abs(dy_pred - dy_true) + K.abs(dx_pred - dx_true), axis=-1)
 
         # Structural similarity (SSIM) index
